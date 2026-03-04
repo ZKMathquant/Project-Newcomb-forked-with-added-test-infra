@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+*.whl
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Type checking
+.mypy_cache/
+.ruff_cache/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Experiment outputs
+experiments/**/outputs/
+experiments/**/logs/
+experiments/**/checkpoints/
+!experiments/**/.gitkeep
+
+# Results
+results/*
+!results/.gitkeep
+
+# Misc
+*.pyc
+.env
+wandb/
+*.pkl
+*.pt

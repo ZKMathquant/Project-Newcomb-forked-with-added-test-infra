@@ -7,6 +7,7 @@ from .experimental1 import ExperimentalAgent1
 from .experimental2 import ExperimentalAgent2
 from .experimental3 import ExperimentalAgent3
 from .ucb import UCBAgent
+from .iucb import IUCBAgent
 
 __all__ = [
     "BaseAgent",
@@ -18,4 +19,5 @@ __all__ = [
     "ExperimentalAgent2",
     "ExperimentalAgent3",
     "UCBAgent",
+    "IUCBAgent",
 ]

@@ -59,6 +59,7 @@ def construct_agent(string : str, options : dict[str,int], seed_offset : int = 0
         "experimental2": agents.ExperimentalAgent2,
         "experimental3": agents.ExperimentalAgent3,
         "ucb":           agents.UCBAgent,
+        "iucb":          agents.IUCBAgent,
     }
 
     name, kwargs = parse_argument_string(string)

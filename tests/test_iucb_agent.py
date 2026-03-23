@@ -113,15 +113,15 @@ class TestIUCBOnDamascus:
 
     @pytest.mark.slow
     def test_iucb_damascus_achieves_positive_reward(self):
-        """IUCB on Damascus should achieve reward > 0 (random gets ~5, pure gets 0)."""
+        """IUCB on Damascus should achieve reward > 0 (random gets ~0.5, pure gets 0)."""
         options = {"num_actions": 2, "num_steps": 500, "num_runs": 5, "seed": 42, "verbose": 0}
         env = construct_environment("damascus", dict(options))
         agent = construct_agent("iucb", dict(options))
         results = simulate(env, agent, options)
 
         avg_reward = results["average_reward"][0][-100:].mean()
-        assert avg_reward > 1.0, \
-            f"Expected avg reward > 1, got {avg_reward:.2f}"
+        assert avg_reward > 0.1, \
+            f"Expected avg reward > 0.1, got {avg_reward:.2f}"
 
 
 class TestIUCBOnBandit:
@@ -130,7 +130,7 @@ class TestIUCBOnBandit:
     @pytest.mark.slow
     def test_iucb_bandit_sublinear_regret(self):
         """IUCB regret should grow sublinearly on standard bandits."""
-        options = {"num_actions": 2, "num_steps": 500, "num_runs": 5, "seed": 42, "verbose": 0}
+        options = {"num_actions": 2, "num_steps": 500, "num_runs": 20, "seed": 42, "verbose": 0}
         env = construct_environment("bandit", dict(options))
         agent = construct_agent("iucb", dict(options))
         results = simulate(env, agent, options)

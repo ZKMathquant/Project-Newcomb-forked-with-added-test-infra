@@ -6,8 +6,8 @@ from . import BaseNewcombLikeEnvironment
 
 class NewcombEnvironment(BaseNewcombLikeEnvironment):
     def __init__(self, *args,
-        boxA : float =  5,  # guaranteed content of first box
-        boxB : float = 10,  # conditional content of second box
+        boxA : float =  0.1,  # guaranteed content of first box
+        boxB : float = 1,  # conditional content of second box
         **kwargs):
         super().__init__(*args, reward_table=[
             [boxB, boxB+boxA],

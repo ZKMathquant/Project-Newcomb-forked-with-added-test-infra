@@ -101,5 +101,5 @@ class TestUCBOnDamascus:
 
         avg_reward = results["average_reward"][0][-50:].mean()
         # UCB plays pure strategy, predictor matches -> always death (reward 0)
-        assert avg_reward < 2.0, \
+        assert avg_reward < 0.2, \
             f"UCB should fail on Damascus but got avg_reward={avg_reward:.2f}"

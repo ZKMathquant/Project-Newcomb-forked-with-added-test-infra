@@ -64,18 +64,18 @@ class TestNewcombStep:
             outcome = env.step(probs, 0)
             assert outcome.env_action == 0, \
                 "Predictor should always predict action 0 when p(0)=1"
-            # Reward should be reward_table[0, 0] = boxB = 10
-            assert outcome.reward == 10.0
+            # Reward should be reward_table[0, 0] = boxB = 1
+            assert outcome.reward == 1.0
 
     def test_reward_matches_table(self):
         """Reward should be reward_table[env_action, action]."""
-        env = NewcombEnvironment(num_actions=2, seed=42, boxA=5, boxB=10)
+        env = NewcombEnvironment(num_actions=2, seed=42, boxA=0.1, boxB=1)
         env.reset()
         # Force predictor to predict 0 by using p=[1, 0]
         probs = np.array([1.0, 0.0])
         outcome = env.step(probs, 0)
         assert outcome.env_action == 0
-        assert outcome.reward == 10.0  # reward_table[0, 0] = boxB
+        assert outcome.reward == 1.0  # reward_table[0, 0] = boxB
 
     def test_damascus_step(self):
         env = DeathInDamascusEnvironment(num_actions=2, seed=42)

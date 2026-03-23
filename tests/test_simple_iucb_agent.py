@@ -270,7 +270,7 @@ class TestDumpState:
 class TestMatrixUCBOnDamascus:
     """Integration test: MatrixUCB should learn to mix on Damascus.
 
-    Damascus payoff: [[0, 10], [10, 0]]. Optimal is p=0.5, value=5.
+    Damascus payoff: [[0, 1], [1, 0]]. Optimal is p=0.5, value=0.5.
     """
 
     def test_converges_to_mixing(self):
@@ -280,7 +280,7 @@ class TestMatrixUCBOnDamascus:
             "seed": 42, "verbose": 0,
         }
         env = construct_environment("damascus", dict(options))
-        agent = construct_agent("matrix-ucb:reward_range=0:10", dict(options))
+        agent = construct_agent("matrix-ucb:reward_range=0:1", dict(options))
         results = simulate(env, agent, options)
 
         # Check that the average probability of action 0 in the last 100 steps
@@ -291,40 +291,40 @@ class TestMatrixUCBOnDamascus:
             f"Expected p≈0.5 on Damascus, got mean p(action 0)={mean_p0:.3f}"
 
     def test_achieves_positive_reward(self):
-        """Agent should achieve reward > 1.0 on Damascus (optimal is 5)."""
+        """Agent should achieve reward > 0.1 on Damascus (optimal is 0.5)."""
         options = {
             "num_actions": 2, "num_steps": 500, "num_runs": 20,
             "seed": 42, "verbose": 0,
         }
         env = construct_environment("damascus", dict(options))
-        agent = construct_agent("matrix-ucb:reward_range=0:10", dict(options))
+        agent = construct_agent("matrix-ucb:reward_range=0:1", dict(options))
         results = simulate(env, agent, options)
 
         avg_reward = results["average_reward"][0][-100:].mean()
-        assert avg_reward > 1.0, \
-            f"Expected reward > 1.0 on Damascus, got {avg_reward:.2f}"
+        assert avg_reward > 0.1, \
+            f"Expected reward > 0.1 on Damascus, got {avg_reward:.2f}"
 
 
 @pytest.mark.slow
 class TestMatrixUCBOnNewcomb:
     """Integration test: MatrixUCB on Newcomb's problem.
 
-    Newcomb payoff: [[10, 15], [0, 5]]. Optimal value = 10 (one-box).
+    Newcomb payoff: [[1, 1.1], [0, 0.1]]. Optimal value = 1.0 (one-box).
     """
 
     def test_achieves_good_reward(self):
-        """Agent should achieve reward > 5.0 on Newcomb."""
+        """Agent should achieve reward > 0.5 on Newcomb."""
         options = {
             "num_actions": 2, "num_steps": 500, "num_runs": 20,
             "seed": 42, "verbose": 0,
         }
         env = construct_environment("newcomb", dict(options))
-        agent = construct_agent("matrix-ucb:reward_range=0:15", dict(options))
+        agent = construct_agent("matrix-ucb:reward_range=0:1.1", dict(options))
         results = simulate(env, agent, options)
 
         avg_reward = results["average_reward"][0][-100:].mean()
-        assert avg_reward > 5.0, \
-            f"Expected reward > 5.0 on Newcomb, got {avg_reward:.2f}"
+        assert avg_reward > 0.5, \
+            f"Expected reward > 0.5 on Newcomb, got {avg_reward:.2f}"
 
 
 @pytest.mark.slow
@@ -363,12 +363,12 @@ class TestMatrixUCBVsFullIUCB:
         env = construct_environment("damascus", dict(options))
 
         # Run MatrixUCB
-        agent_mucb = construct_agent("matrix-ucb:reward_range=0:10", dict(options))
+        agent_mucb = construct_agent("matrix-ucb:reward_range=0:1", dict(options))
         results_mucb = simulate(env, agent_mucb, options)
         reward_mucb = results_mucb["average_reward"][0][-50:].mean()
 
         # Run full IUCB
-        agent_iucb = construct_agent("iucb:reward_range=0:10", dict(options))
+        agent_iucb = construct_agent("iucb:reward_range=0:1", dict(options))
         results_iucb = simulate(env, agent_iucb, options)
         reward_iucb = results_iucb["average_reward"][0][-50:].mean()
 

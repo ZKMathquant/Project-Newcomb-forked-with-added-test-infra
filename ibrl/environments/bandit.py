@@ -8,16 +8,16 @@ class BanditEnvironment(BaseEnvironment):
     """
     Multi-armed bandit environment
 
-    Each action is associated with a fixed average reward. Upon taking an action, the reward is sampled randomly
-    according to a normal distribution centred on the average value.
-    Upon initialisation, the average rewards are sampled from a standard normal distribution.
+    Each action is associated with a fixed probability p. Upon taking an action, the reward is sampled
+    from a Bernoulli distribution with that probability (i.e. reward is 1 with probability p, 0 otherwise).
+    Upon initialisation, the probabilities are sampled uniformly from [0, 1].
     """
     def _resolve(self, env_action : int | None, action : int) -> float:
-        return self.random.normal(self.rewards[action], 1)
+        return float(self.random.random() < self.rewards[action])
 
     def get_optimal_reward(self) -> int:
         return self.rewards.max()
 
     def reset(self):
         super().reset()
-        self.rewards = self.random.standard_normal((self.num_actions,))
+        self.rewards = self.random.random((self.num_actions,))

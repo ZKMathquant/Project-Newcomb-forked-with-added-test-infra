@@ -4,7 +4,7 @@ import pytest
 
 from ibrl.outcome import Outcome
 from ibrl.infrabayesian.beliefs import (
-    BaseBelief, BanditBelief, GaussianBelief, NewcombLikeBelief, SwitchingBelief,
+    BaseBelief, BernoulliBelief, GaussianBelief, NewcombLikeBelief,
 )
 from ibrl.infrabayesian.belief_a_measure import BeliefAMeasure
 from ibrl.infrabayesian.belief_infradistribution import BeliefInfradistribution
@@ -16,16 +16,16 @@ from ibrl.simulators.simulator import simulate
 from ibrl.utils import sample_action
 
 
-# ── BanditBelief ─────────────────────────────────────────────────────────────
+# ── BernoulliBelief ─────────────────────────────────────────────────────────────
 
-class TestBanditBelief:
+class TestBernoulliBelief:
     def test_initial_model_is_uniform(self):
-        b = BanditBelief(num_actions=3)
+        b = BernoulliBelief(num_actions=3)
         model = b.expected_reward_model()
         np.testing.assert_allclose(model, [0.5, 0.5, 0.5])
 
     def test_update_shifts_estimate(self):
-        b = BanditBelief(num_actions=2)
+        b = BernoulliBelief(num_actions=2)
         # Observe arm 0 succeeding 10 times
         for _ in range(10):
             b.update(action=0, outcome=Outcome(reward=1.0))
@@ -38,11 +38,11 @@ class TestBanditBelief:
         assert model[1] < 0.2  # arm 1 should be estimated low
 
     def test_model_shape_is_1d(self):
-        b = BanditBelief(num_actions=4)
+        b = BernoulliBelief(num_actions=4)
         assert b.expected_reward_model().shape == (4,)
 
     def test_copy_is_independent(self):
-        b = BanditBelief(num_actions=2)
+        b = BernoulliBelief(num_actions=2)
         b.update(action=0, outcome=Outcome(reward=1.0))
         c = b.copy()
         c.update(action=0, outcome=Outcome(reward=1.0))
@@ -79,41 +79,12 @@ class TestNewcombLikeBelief:
         assert np.isnan(b.observed[1, 1])  # original unaffected
 
 
-# ── SwitchingBelief ──────────────────────────────────────────────────────────
-
-class TestSwitchingBelief:
-    def test_initial_model_is_uniform(self):
-        b = SwitchingBelief(num_actions=2, max_steps=10)
-        model = b.expected_reward_model(context={'step': 1})
-        np.testing.assert_allclose(model, [0.5, 0.5])
-
-    def test_model_shape_is_1d(self):
-        b = SwitchingBelief(num_actions=3, max_steps=10)
-        assert b.expected_reward_model(context={'step': 1}).shape == (3,)
-
-    def test_learns_from_observations(self):
-        b = SwitchingBelief(num_actions=2, max_steps=20)
-        # Arm 0 always succeeds for steps 1-10
-        for step in range(1, 11):
-            b.update(action=0, outcome=Outcome(reward=1.0), context={'step': step})
-        model = b.expected_reward_model(context={'step': 11})
-        assert model[0] > 0.7  # should have learned arm 0 is good
-
-    def test_copy_is_independent(self):
-        b = SwitchingBelief(num_actions=2, max_steps=10)
-        b.update(action=0, outcome=Outcome(reward=1.0), context={'step': 1})
-        c = b.copy()
-        c.update(action=0, outcome=Outcome(reward=0.0), context={'step': 2})
-        # log_weights should differ after independent updates
-        assert not np.array_equal(b.log_weights, c.log_weights)
-
-
 # ── BeliefAMeasure ───────────────────────────────────────────────────────────
 
 class TestBeliefAMeasure:
     def test_passthrough_with_unit_scale_zero_offset(self):
         """With lambda=1, b=0, BeliefAMeasure is a pure pass-through."""
-        belief = BanditBelief(num_actions=2)
+        belief = BernoulliBelief(num_actions=2)
         belief.update(action=0, outcome=Outcome(reward=1.0))
         bam = BeliefAMeasure(belief)
         np.testing.assert_allclose(
@@ -122,7 +93,7 @@ class TestBeliefAMeasure:
         )
 
     def test_scale_and_offset_applied(self):
-        belief = BanditBelief(num_actions=2)
+        belief = BernoulliBelief(num_actions=2)
         bam = BeliefAMeasure(belief, log_scale=np.log(2.0), offset=0.1)
         model = bam.expected_reward_model()
         expected = 2.0 * belief.expected_reward_model() + 0.1
@@ -134,7 +105,7 @@ class TestBeliefAMeasure:
 class TestBeliefInfradistribution:
     def test_single_measure_passthrough(self):
         """Non-KU: single measure, should match belief directly."""
-        belief = BanditBelief(num_actions=2)
+        belief = BernoulliBelief(num_actions=2)
         belief.update(action=0, outcome=Outcome(reward=1.0))
         bam = BeliefAMeasure(belief)
         infradist = BeliefInfradistribution([bam])
@@ -144,7 +115,7 @@ class TestBeliefInfradistribution:
         )
 
     def test_update_propagates_to_belief(self):
-        belief = BanditBelief(num_actions=2)
+        belief = BernoulliBelief(num_actions=2)
         bam = BeliefAMeasure(belief)
         infradist = BeliefInfradistribution([bam])
         infradist.update(action=0, outcome=Outcome(reward=1.0))
@@ -156,12 +127,12 @@ class TestBeliefInfradistribution:
 # ── IB pipe vs direct belief equivalence ─────────────────────────────────────
 
 class TestBanditEquivalence:
-    """InfraBayesianAgent with BanditBelief should produce identical reward
-    models to using BanditBelief directly, at every step."""
+    """InfraBayesianAgent with BernoulliBelief should produce identical reward
+    models to using BernoulliBelief directly, at every step."""
 
     def test_ib_pipe_matches_direct_belief(self):
-        belief = BanditBelief(num_actions=3)
-        agent = InfraBayesianAgent(num_actions=3, belief=BanditBelief(num_actions=3), epsilon=0.1)
+        belief = BernoulliBelief(num_actions=3)
+        agent = InfraBayesianAgent(num_actions=3, belief=BernoulliBelief(num_actions=3), epsilon=0.1)
         agent.reset()
 
         # Feed same observations to both
@@ -255,7 +226,7 @@ class TestSimulatorIntegration:
         """IB agent on bandit: average reward should increase over time."""
         env = BanditEnvironment(num_actions=3, seed=42)
         agent = InfraBayesianAgent(
-            num_actions=3, belief=BanditBelief(num_actions=3),
+            num_actions=3, belief=BernoulliBelief(num_actions=3),
             epsilon=(0.5, 0.5, 0.01), seed=123,
         )
         results = simulate(env, agent, {"num_steps": 200, "num_runs": 5})

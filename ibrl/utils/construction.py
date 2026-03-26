@@ -1,6 +1,6 @@
 from .. import agents
 from .. import environments
-from ..infrabayesian.beliefs import BanditBelief, NewcombLikeBelief, SwitchingBelief
+from ..infrabayesian.beliefs import BernoulliBelief, NewcombLikeBelief
 
 
 def parse_argument_string(string : str) -> tuple[str, dict[str, float]]:
@@ -66,9 +66,8 @@ def construct_agent(string : str, options : dict[str,int], seed_offset : int = 0
     }
 
     belief_types = {
-        "bandit":   lambda num_actions, **kw: BanditBelief(num_actions),
-        "newcomb":  lambda num_actions, **kw: NewcombLikeBelief(num_actions),
-        "switching": lambda num_actions, num_steps=100, **kw: SwitchingBelief(num_actions, int(num_steps)),
+        "bernoulli": lambda num_actions, **kw: BernoulliBelief(num_actions),
+        "newcomb":   lambda num_actions, **kw: NewcombLikeBelief(num_actions),
     }
 
     name, kwargs = parse_argument_string(string)
@@ -78,7 +77,7 @@ def construct_agent(string : str, options : dict[str,int], seed_offset : int = 0
     arguments = dict()
     arguments.update(options)
     arguments.update(kwargs)
-    num_steps = arguments.pop("num_steps", None)  # These should not be accessible to the agent
+    arguments.pop("num_steps", None)  # These should not be accessible to the agent
     arguments.pop("num_runs", None)
     arguments["seed"] += seed_offset
 
@@ -89,10 +88,7 @@ def construct_agent(string : str, options : dict[str,int], seed_offset : int = 0
             belief_name = str(int(belief_name))  # parse_argument_string returns floats
         if belief_name not in belief_types:
             raise RuntimeError("Invalid belief type: " + str(belief_name))
-        belief_kwargs = {"num_actions": arguments["num_actions"]}
-        if num_steps is not None:
-            belief_kwargs["num_steps"] = num_steps
-        arguments["belief"] = belief_types[belief_name](**belief_kwargs)
+        arguments["belief"] = belief_types[belief_name](num_actions=arguments["num_actions"])
 
     return agent_types[name](**arguments)
 

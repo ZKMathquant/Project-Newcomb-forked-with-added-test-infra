@@ -36,7 +36,7 @@ class BaseBelief(ABC):
         pass
 
 
-class BanditBelief(BaseBelief):
+class BernoulliBelief(BaseBelief):
     """Belief for i.i.d. Bernoulli rewards per arm.
 
     Well-specified for: BanditEnvironment
@@ -55,8 +55,8 @@ class BanditBelief(BaseBelief):
     def expected_reward_model(self, context: dict | None = None) -> NDArray[np.float64]:
         return self.alpha / (self.alpha + self.beta)
 
-    def copy(self) -> "BanditBelief":
-        c = BanditBelief.__new__(BanditBelief)
+    def copy(self) -> "BernoulliBelief":
+        c = BernoulliBelief.__new__(BernoulliBelief)
         c.num_actions = self.num_actions
         c.alpha = self.alpha.copy()
         c.beta = self.beta.copy()
@@ -122,67 +122,3 @@ class NewcombLikeBelief(BaseBelief):
         return c
 
 
-class SwitchingBelief(BaseBelief):
-    """Belief for Bernoulli rewards with a single unknown switch time.
-
-    Well-specified for: SwitchingAdversaryEnvironment
-    Over-parameterized but ok: BanditEnvironment (concentrates on "never switches")
-    """
-
-    def __init__(self, num_actions: int, max_steps: int):
-        self.num_actions = num_actions
-        self.max_steps = max_steps
-        T, K = max_steps, num_actions
-
-        self.log_weights = np.zeros(T)          # uniform prior over switch times
-        self.alpha_before = np.ones((T, K))     # Beta stats before switch
-        self.beta_before = np.ones((T, K))
-        self.alpha_after = np.ones((T, K))      # Beta stats after switch
-        self.beta_after = np.ones((T, K))
-
-    def update(self, action: int, outcome: Outcome, context: dict | None = None):
-        step = context['step']
-        r = outcome.reward
-
-        for t in range(self.max_steps):
-            if step < t:
-                p = self.alpha_before[t, action] / (
-                    self.alpha_before[t, action] + self.beta_before[t, action])
-                self.log_weights[t] += r * np.log(p + 1e-300) + (1 - r) * np.log(1 - p + 1e-300)
-                self.alpha_before[t, action] += r
-                self.beta_before[t, action] += 1.0 - r
-            else:
-                p = self.alpha_after[t, action] / (
-                    self.alpha_after[t, action] + self.beta_after[t, action])
-                self.log_weights[t] += r * np.log(p + 1e-300) + (1 - r) * np.log(1 - p + 1e-300)
-                self.alpha_after[t, action] += r
-                self.beta_after[t, action] += 1.0 - r
-
-    def expected_reward_model(self, context: dict | None = None) -> NDArray[np.float64]:
-        step = context['step']
-        log_w = self.log_weights - self.log_weights.max()
-        weights = np.exp(log_w)
-        weights /= weights.sum()
-
-        model = np.zeros(self.num_actions)
-        for t in range(self.max_steps):
-            for a in range(self.num_actions):
-                if step < t:
-                    p = self.alpha_before[t, a] / (
-                        self.alpha_before[t, a] + self.beta_before[t, a])
-                else:
-                    p = self.alpha_after[t, a] / (
-                        self.alpha_after[t, a] + self.beta_after[t, a])
-                model[a] += weights[t] * p
-        return model
-
-    def copy(self) -> "SwitchingBelief":
-        c = SwitchingBelief.__new__(SwitchingBelief)
-        c.num_actions = self.num_actions
-        c.max_steps = self.max_steps
-        c.log_weights = self.log_weights.copy()
-        c.alpha_before = self.alpha_before.copy()
-        c.beta_before = self.beta_before.copy()
-        c.alpha_after = self.alpha_after.copy()
-        c.beta_after = self.beta_after.copy()
-        return c
